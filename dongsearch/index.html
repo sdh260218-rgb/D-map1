@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>지역 검색</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <!--
+    Kakao Maps JS SDK
+    - autoload=false 로 불러온 뒤 src/hooks/useKakaoLoader.js 에서 kakao.maps.load() 로 초기화합니다.
+    - libraries=services (키워드 검색 / 좌표→행정동 역지오코딩), clusterer (핀 마커 클러스터링)
+    - 주의: Kakao Developers 콘솔의 "플랫폼 > Web" 에 실제 서비스 도메인(및 로컬 개발 시 http://localhost:5173)을
+      등록해야 지도가 정상적으로 렌더링됩니다. 등록하지 않으면 콘솔에 "등록되지 않은 도메인" 에러가 뜹니다.
+  -->
+  <script
+    src="//dapi.kakao.com/v2/maps/sdk.js?appkey=bd38e8d03335d607a71a4550c1b9f4e6&autoload=false&libraries=services,clusterer"
+  ></script>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+</html>
