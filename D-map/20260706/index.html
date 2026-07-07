@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>동네 추천 - 조건 기반 위치 탐색</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="app-header-inner">
+      <span class="logo-mark">동네추천</span>
+      <span class="logo-sub">조건에 맞는 동네를 찾아드려요</span>
+    </div>
+  </header>
+
+  <main class="app-main">
+
+    <!-- ================= 메인 화면 ================= -->
+    <section id="view-main" class="view">
+
+      <div class="panel">
+        <div class="panel-left">
+
+          <div class="field-group">
+            <label class="field-label" for="sido-select">시/도</label>
+            <select id="sido-select" class="select-input">
+              <option value="서울시">서울시</option>
+            </select>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">구 선택 <span class="field-hint">(최대 3개)</span></label>
+            <div id="gu-buttons" class="gu-button-row"></div>
+            <div id="gu-chips" class="chip-row"></div>
+            <p id="gu-warning" class="field-warning" hidden></p>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label" for="prompt-input">어떤 곳을 찾으시나요?</label>
+            <textarea
+              id="prompt-input"
+              class="prompt-textarea"
+              rows="3"
+              maxlength="200"
+              placeholder="예: 요양병원이 많고 초등학교가 가까운 곳"
+            ></textarea>
+
+            <div class="prompt-meta-row">
+              <div class="example-chip-row">
+                <button type="button" class="example-chip" data-text="아이 키우기 좋고 유치원과 병원이 가까운 곳">육아</button>
+                <button type="button" class="example-chip" data-text="요양병원과 공원이 가까운 조용한 곳">노년</button>
+                <button type="button" class="example-chip" data-text="공원이 많고 산책하기 좋은 곳">반려동물</button>
+              </div>
+              <span id="char-count" class="char-count">0/200</span>
+            </div>
+
+            <p id="prompt-warning" class="field-warning" hidden></p>
+          </div>
+
+          <button type="button" id="search-btn" class="primary-btn">
+            검색
+          </button>
+
+          <div id="loading-indicator" class="loading-indicator" hidden>
+            <span class="spinner"></span> 조건을 분석하는 중...
+          </div>
+
+        </div>
+
+        <!-- 오른쪽 지도 -->
+        <div class="panel-right">
+            <div id="map" style="width:100%; height:600px; border-radius:15px;"></div>
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- ================= 결과 화면 ================= -->
+    <section id="view-result" class="view" hidden>
+
+      <button type="button" id="back-to-main-btn" class="back-btn">
+        다시 검색
+      </button>
+
+      <div class="result-layout">
+
+        <div class="result-list-col">
+          <h2 class="section-title">추천 순위</h2>
+          <div id="rank-list" class="rank-list"></div>
+        </div>
+
+        <div class="result-map-col">
+          <h2 class="section-title">동별 점수</h2>
+          <div id="heatmap-grid" class="heatmap-grid"></div>
+
+          <div class="legend-row">
+            <span>낮음</span>
+            <span>높음</span>
+          </div>
+
+        </div>
+
+      </div>
+
+      <div id="empty-result" class="empty-state" hidden>
+        <p>조건에 맞는 지역을 찾지 못했어요.</p>
+      </div>
+
+    </section>
+
+    <!-- ================= 상세 화면 ================= -->
+    <section id="view-detail" class="view" hidden>
+
+      <button type="button" id="back-to-result-btn" class="back-btn">
+        목록으로
+      </button>
+
+      <div class="detail-header">
+        <h2 id="detail-dong-name"></h2>
+        <p id="detail-score-line"></p>
+      </div>
+
+      <p id="detail-reason"></p>
+
+      <div class="detail-section">
+        <h3>주변 시설</h3>
+        <div id="detail-pins"></div>
+      </div>
+
+      <div class="detail-section">
+        <h3>키워드별 점수</h3>
+        <div id="detail-bars"></div>
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+<!-- 카카오 지도 API -->
+<script src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=bd38e8d03335d607a71a4550c1b9f4e6"></script>
+
+<script src="script.js"></script>
+
+<script>
+
+// 서울디지텍고등학교
+const school = new kakao.maps.LatLng(37.53917,126.99193);
+
+// 지도 생성
+const map = new kakao.maps.Map(document.getElementById("map"),{
+    center:school,
+    level:2
+});
+
+// 마커 생성
+const marker = new kakao.maps.Marker({
+    position:school
+});
+
+marker.setMap(map);
+
+// 정보창
+const info = new kakao.maps.InfoWindow({
+    content:"<div style='padding:8px;'>서울디지텍고등학교</div>"
+});
+
+info.open(map,marker);
+
+</script>
+
+</body>
+</html>

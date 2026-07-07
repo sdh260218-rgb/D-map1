@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>지역 검색</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-size: 16px;
+    --background: #F4F5F7;
+    --foreground: #111318;
+    --card: #FFFFFF;
+    --card-foreground: #111318;
+    --primary: #1B4FD8;
+    --primary-foreground: #FFFFFF;
+    --secondary: #EEF2FF;
+    --secondary-foreground: #1B4FD8;
+    --muted: #ECEEF2;
+    --muted-foreground: #6B7280;
+    --accent: #EEF2FF;
+    --accent-foreground: #1B4FD8;
+    --destructive: #DC2626;
+    --border: rgba(17, 19, 24, 0.10);
+    --input-background: #F4F5F7;
+    --radius: 0.625rem;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', 'Inter', sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: var(--font-size);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* ───────── Sidebar ───────── */
+  .sidebar {
+    width: 400px;
+    flex-shrink: 0;
+    height: 100%;
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 1px 0 0 0 rgba(17, 19, 24, 0.08);
+    z-index: 5;
+  }
+
+  .sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sidebar-header .icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header .icon-box svg {
+    width: 14px;
+    height: 14px;
+    stroke: #fff;
+  }
+
+  .sidebar-header .title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .sidebar-header .subtitle {
+    font-size: 11px;
+    color: var(--muted-foreground);
+    margin: 2px 0 0;
+  }
+
+  .sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scrollbar-width: none;
+  }
+  .sidebar-body::-webkit-scrollbar { display: none; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  /* select */
+  .select-wrap {
+    position: relative;
+  }
+
+  select.city-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--input-background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 36px 10px 14px;
+    font-size: 14px;
+    color: var(--foreground);
+    font-family: inherit;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  select.city-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(27, 79, 216, 0.15);
+  }
+
+  .select-wrap svg.chevron {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    stroke: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  /* condition chips */
+  .chip-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+
+  .chip svg { width: 12px; height: 12px; stroke: currentColor; }
+
+  .chip:hover {
+    background: var(--secondary);
+    color: var(--primary);
+  }
+
+  .chip.active {
+    background: var(--secondary);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* textarea */
+  .textarea-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .textarea-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(27, 79, 216, 0.15);
+  }
+
+  textarea.query-input {
+    width: 100%;
+    height: 96px;
+    resize: none;
+    border: none;
+    background: transparent;
+    padding: 14px 14px 26px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--foreground);
+    outline: none;
+    line-height: 1.5;
+  }
+
+  textarea.query-input::placeholder {
+    color: #A6ABB4;
+  }
+
+  .char-count {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .field-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--destructive);
+    margin-top: 8px;
+  }
+  .field-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* footer / search button */
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .search-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: none;
+    border-radius: 8px;
+    padding: 13px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+
+  .search-btn:hover { background: #1745bd; }
+  .search-btn:active { transform: scale(0.98); }
+  .search-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+
+  .search-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* ───────── Map area ───────── */
+  .map-area {
+    flex: 1;
+    position: relative;
+    background: #E9ECF1;
+  }
+
+  .map-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-error-inner {
+    text-align: center;
+  }
+
+  .map-error-inner svg.alert {
+    width: 32px;
+    height: 32px;
+    stroke: #DC2626;
+    margin-bottom: 14px;
+  }
+
+  .map-error-inner p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #475467;
+    line-height: 1.6;
+    margin: 0 0 12px;
+  }
+
+  .map-error-inner .refresh-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    background: var(--foreground);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 100%; }
+    .map-area { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div>
+        <p class="title">지역 검색</p>
+        <p class="subtitle">조건에 맞는 동네를 찾아드려요</p>
+      </div>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- City -->
+      <div>
+        <label class="field-label">시 / 도</label>
+        <div class="select-wrap">
+          <select class="city-select" id="citySelect">
+            <option value="">시 / 도 선택</option>
+            <option value="서울특별시">서울특별시</option>
+            <option value="부산광역시">부산광역시</option>
+            <option value="인천광역시">인천광역시</option>
+            <option value="대구광역시">대구광역시</option>
+            <option value="광주광역시">광주광역시</option>
+            <option value="대전광역시">대전광역시</option>
+            <option value="울산광역시">울산광역시</option>
+            <option value="세종특별자치시">세종특별자치시</option>
+            <option value="경기도">경기도</option>
+            <option value="강원특별자치도">강원특별자치도</option>
+            <option value="충청북도">충청북도</option>
+            <option value="충청남도">충청남도</option>
+            <option value="전북특별자치도">전북특별자치도</option>
+            <option value="전라남도">전라남도</option>
+            <option value="경상북도">경상북도</option>
+            <option value="경상남도">경상남도</option>
+            <option value="제주특별자치도">제주특별자치도</option>
+          </select>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- Condition -->
+      <div>
+        <label class="field-label">조건 입력</label>
+        <div class="chip-row">
+          <button type="button" class="chip" data-preset="육아">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            육아
+          </button>
+          <button type="button" class="chip" data-preset="노년">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+            노년
+          </button>
+          <button type="button" class="chip" data-preset="반려동물">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/><path d="M17 14c-.7-1.4-1.8-2.3-3-2.7a4.7 4.7 0 0 0-4 0c-1.2.4-2.3 1.3-3 2.7-.7 1.4-.7 3 .3 4.1 1 1.1 2.4 1.5 3.9.9.4-.2.9-.2 1.3 0 1.5.6 2.9.2 3.9-.9 1-1.1 1-2.7.3-4.1Z"/></svg>
+            반려동물
+          </button>
+        </div>
+
+        <div class="textarea-wrap">
+          <textarea class="query-input" id="queryInput" maxlength="200" placeholder="예) 요양병원이 많고 초등학교가 가까운 곳"></textarea>
+          <span class="char-count"><span id="charCount">0</span>/200</span>
+        </div>
+        <div class="field-error" id="queryErrorMsg" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          검색 조건을 입력해주세요.
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="search-btn" id="searchBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        검색하기
+      </button>
+    </div>
+  </aside>
+
+  <!-- Map area -->
+  <main class="map-area">
+    <div class="map-error" id="mapError">
+      <div class="map-error-inner">
+        <svg class="alert" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p>지도를 불러오지 못했어요.<br />새로고침 해주세요.</p>
+        <button class="refresh-link" id="refreshBtn">새로고침</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const PRESET_QUERIES = {
+    "육아": "유치원, 초등학교, 소아과가 가까운 육아 친화 환경",
+    "노년": "공원, 요양병원, 경로당이 가까운 노인 생활 편의 지역",
+    "반려동물": "동물병원, 애견카페, 공원이 많은 반려동물 친화 지역",
+  };
+
+  const queryInput = document.getElementById('queryInput');
+  const charCount = document.getElementById('charCount');
+  const chips = document.querySelectorAll('.chip');
+  const searchBtn = document.getElementById('searchBtn');
+  const queryErrorMsg = document.getElementById('queryErrorMsg');
+  const toast = document.getElementById('toast');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  function updateCount() {
+    charCount.textContent = queryInput.value.length;
+  }
+
+  queryInput.addEventListener('input', () => {
+    updateCount();
+    if (queryInput.value.trim().length >= 2) {
+      queryErrorMsg.style.display = 'none';
+    }
+  });
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      const key = chip.dataset.preset;
+      queryInput.value = PRESET_QUERIES[key];
+      updateCount();
+      queryErrorMsg.style.display = 'none';
+    });
+  });
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  searchBtn.addEventListener('click', () => {
+    const city = document.getElementById('citySelect').value;
+    const trimmed = queryInput.value.trim();
+
+    if (!city) {
+      showToast('시 / 도를 선택해주세요.');
+      return;
+    }
+    if (trimmed.length < 2) {
+      queryErrorMsg.style.display = 'flex';
+      return;
+    }
+    queryErrorMsg.style.display = 'none';
+    showToast('검색 중입니다...');
+  });
+
+  refreshBtn.addEventListener('click', () => {
+    window.location.reload();
+  });
+</script>
+
+</body>
+</html>

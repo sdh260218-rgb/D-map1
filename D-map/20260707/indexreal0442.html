@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>지역 검색</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --font-size: 16px;
+    --background: #F4F5F7;
+    --foreground: #111318;
+    --card: #FFFFFF;
+    --card-foreground: #111318;
+    --primary: #1B4FD8;
+    --primary-foreground: #FFFFFF;
+    --secondary: #EEF2FF;
+    --secondary-foreground: #1B4FD8;
+    --muted: #ECEEF2;
+    --muted-foreground: #6B7280;
+    --accent: #EEF2FF;
+    --accent-foreground: #1B4FD8;
+    --destructive: #DC2626;
+    --border: rgba(17, 19, 24, 0.10);
+    --input-background: #F4F5F7;
+    --radius: 0.625rem;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    font-family: 'Noto Sans KR', 'Inter', sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-size: var(--font-size);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    display: flex;
+    height: 100vh;
+    width: 100%;
+    overflow: hidden;
+  }
+
+  /* ───────── Sidebar ───────── */
+  .sidebar {
+    width: 400px;
+    flex-shrink: 0;
+    height: 100%;
+    background: var(--card);
+    display: flex;
+    flex-direction: column;
+    box-shadow: 1px 0 0 0 rgba(17, 19, 24, 0.08);
+    z-index: 5;
+  }
+
+  .sidebar-header {
+    padding: 20px 20px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .sidebar-header .icon-box {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .sidebar-header .icon-box svg {
+    width: 14px;
+    height: 14px;
+    stroke: #fff;
+  }
+
+  .sidebar-header .title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+
+  .sidebar-header .subtitle {
+    font-size: 11px;
+    color: var(--muted-foreground);
+    margin: 2px 0 0;
+  }
+
+  .sidebar-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    scrollbar-width: none;
+  }
+  .sidebar-body::-webkit-scrollbar { display: none; }
+
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  /* select */
+  .select-wrap {
+    position: relative;
+  }
+
+  select.city-select {
+    width: 100%;
+    appearance: none;
+    -webkit-appearance: none;
+    background: var(--input-background);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 36px 10px 14px;
+    font-size: 14px;
+    color: var(--foreground);
+    font-family: inherit;
+    cursor: pointer;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  select.city-select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(27, 79, 216, 0.15);
+  }
+
+  .select-wrap svg.chevron {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    stroke: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  /* gu / gun panel */
+  .gu-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+
+  .gu-count {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(27, 79, 216, 0.1);
+    color: var(--primary);
+  }
+
+  .gu-count.maxed {
+    background: #FEF3C7;
+    color: #B45309;
+  }
+
+  .gu-grid-wrap {
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .gu-grid-wrap.error {
+    border-color: var(--destructive);
+    box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.5);
+  }
+
+  .gu-grid {
+    max-height: 192px;
+    overflow-y: auto;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    scrollbar-width: none;
+  }
+  .gu-grid::-webkit-scrollbar { display: none; }
+
+  .gu-item {
+    padding: 8px 12px;
+    text-align: left;
+    font-size: 13px;
+    background: var(--card);
+    color: var(--foreground);
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.1s ease;
+  }
+
+  .gu-item:hover:not(.selected):not(.disabled) {
+    background: var(--secondary);
+  }
+
+  .gu-item.selected {
+    background: var(--primary);
+    color: #fff;
+    font-weight: 600;
+  }
+
+  .gu-item.disabled {
+    color: rgba(107, 114, 128, 0.5);
+    cursor: not-allowed;
+  }
+
+  .confirm-btn {
+    width: 100%;
+    margin-top: 8px;
+    background: rgba(27, 79, 216, 0.08);
+    color: var(--primary);
+    border: none;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .confirm-btn:hover { background: rgba(27, 79, 216, 0.14); }
+
+  /* selected chips */
+  .selected-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .selected-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    background: var(--secondary);
+    color: var(--primary);
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 999px;
+  }
+
+  .selected-chip button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    color: var(--primary);
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 999px;
+    margin-left: 2px;
+  }
+  .selected-chip button:hover { background: rgba(27, 79, 216, 0.2); }
+  .selected-chip button svg { width: 11px; height: 11px; stroke: currentColor; }
+
+  .add-chip-btn {
+    display: inline-flex;
+    align-items: center;
+    font-size: 12px;
+    color: var(--muted-foreground);
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px dashed var(--border);
+    background: none;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s ease;
+  }
+  .add-chip-btn:hover {
+    color: var(--foreground);
+    border-color: rgba(27, 79, 216, 0.4);
+  }
+
+  /* condition chips */
+  .chip-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+  }
+
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    font-family: inherit;
+  }
+
+  .chip svg { width: 12px; height: 12px; stroke: currentColor; }
+
+  .chip:hover {
+    background: var(--secondary);
+    color: var(--primary);
+  }
+
+  .chip.active {
+    background: var(--secondary);
+    color: var(--primary);
+    border-color: var(--primary);
+  }
+
+  /* textarea */
+  .textarea-wrap {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--card);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .textarea-wrap:focus-within {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(27, 79, 216, 0.15);
+  }
+
+  textarea.query-input {
+    width: 100%;
+    height: 96px;
+    resize: none;
+    border: none;
+    background: transparent;
+    padding: 14px 14px 26px;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--foreground);
+    outline: none;
+    line-height: 1.5;
+  }
+
+  textarea.query-input::placeholder {
+    color: #A6ABB4;
+  }
+
+  .char-count {
+    position: absolute;
+    right: 12px;
+    bottom: 8px;
+    font-size: 11px;
+    color: var(--muted-foreground);
+    pointer-events: none;
+  }
+
+  .field-error {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--destructive);
+    margin-top: 8px;
+  }
+  .field-error svg { width: 14px; height: 14px; flex-shrink: 0; }
+
+  /* footer / search button */
+  .sidebar-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+
+  .search-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--primary);
+    color: var(--primary-foreground);
+    border: none;
+    border-radius: 8px;
+    padding: 13px 16px;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+
+  .search-btn:hover { background: #1745bd; }
+  .search-btn:active { transform: scale(0.98); }
+  .search-btn svg { width: 16px; height: 16px; stroke: currentColor; }
+
+  .search-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  /* ───────── Map area ───────── */
+  .map-area {
+    flex: 1;
+    position: relative;
+    background: #E9ECF1;
+  }
+
+  .map-error {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-error-inner {
+    text-align: center;
+  }
+
+  .map-error-inner svg.alert {
+    width: 32px;
+    height: 32px;
+    stroke: #DC2626;
+    margin-bottom: 14px;
+  }
+
+  .map-error-inner p {
+    font-size: 14px;
+    font-weight: 500;
+    color: #475467;
+    line-height: 1.6;
+    margin: 0 0 12px;
+  }
+
+  .map-error-inner .refresh-link {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  .locate-btn {
+    position: absolute;
+    bottom: 32px;
+    right: 24px;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 16px rgba(17,19,24,0.12);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+    transition: background 0.15s ease, transform 0.05s ease;
+  }
+  .locate-btn:hover { background: var(--muted); }
+  .locate-btn:active { transform: scale(0.95); }
+  .locate-btn svg { width: 16px; height: 16px; stroke: var(--foreground); }
+
+  /* results view */
+  .results-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .back-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.15s ease;
+  }
+  .back-btn:hover { background: var(--muted); }
+  .back-btn svg { width: 16px; height: 16px; stroke: var(--foreground); }
+
+  .results-header .title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    margin: 0;
+  }
+  .results-header .subtitle {
+    font-size: 11px;
+    color: var(--muted-foreground);
+    margin: 2px 0 0;
+  }
+
+  .keyword-summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .keyword-chip {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--primary);
+    background: var(--secondary);
+    padding: 4px 9px;
+    border-radius: 999px;
+  }
+
+  .results-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px 16px;
+    scrollbar-width: none;
+  }
+  .results-list::-webkit-scrollbar { display: none; }
+
+  .result-item {
+    display: flex;
+    gap: 10px;
+    padding: 12px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+  }
+  .result-item:hover { background: var(--muted); }
+
+  .rank-badge {
+    width: 22px;
+    height: 22px;
+    border-radius: 999px;
+    background: var(--secondary);
+    color: var(--primary);
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .rank-badge.top {
+    background: var(--primary);
+    color: #fff;
+  }
+
+  .result-content { flex: 1; min-width: 0; }
+
+  .result-top-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .result-top-row .dong-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--foreground);
+  }
+
+  .result-top-row .score {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+    flex-shrink: 0;
+  }
+
+  .gu-name {
+    font-size: 11px;
+    color: var(--muted-foreground);
+    margin: 1px 0 6px;
+  }
+
+  .progress-bar {
+    height: 5px;
+    border-radius: 999px;
+    background: var(--muted);
+    overflow: hidden;
+    margin-bottom: 7px;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: #10B981;
+    transition: width 0.3s ease;
+  }
+
+  .keyword-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .keyword-pills span {
+    font-size: 10px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    background: var(--muted);
+    padding: 2px 7px;
+    border-radius: 999px;
+  }
+
+  /* score legend */
+  .score-legend {
+    position: absolute;
+    bottom: 96px;
+    right: 16px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    box-shadow: 0 4px 14px rgba(17,19,24,0.1);
+    z-index: 20;
+  }
+
+  .score-legend-title {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 8px;
+  }
+
+  .score-legend-swatches {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+  }
+
+  .swatch-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .swatch {
+    width: 20px;
+    height: 12px;
+    border-radius: 3px;
+  }
+
+  .swatch-col span {
+    font-size: 9px;
+    color: var(--muted-foreground);
+    white-space: nowrap;
+  }
+
+  /* toast */
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-12px);
+    background: var(--foreground);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 500;
+    padding: 10px 18px;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    z-index: 100;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  @media (max-width: 768px) {
+    .sidebar { width: 100%; }
+    .map-area { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div id="searchView" style="display:flex; flex-direction:column; height:100%;">
+    <div class="sidebar-header">
+      <div class="icon-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      </div>
+      <div>
+        <p class="title">지역 검색</p>
+        <p class="subtitle">조건에 맞는 동네를 찾아드려요</p>
+      </div>
+    </div>
+
+    <div class="sidebar-body">
+      <!-- City -->
+      <div>
+        <label class="field-label">시 / 도</label>
+        <div class="select-wrap">
+          <select class="city-select" id="citySelect">
+            <option value="">시 / 도 선택</option>
+            <option value="서울특별시">서울특별시</option>
+            <option value="부산광역시">부산광역시</option>
+            <option value="인천광역시">인천광역시</option>
+            <option value="대구광역시">대구광역시</option>
+            <option value="광주광역시">광주광역시</option>
+            <option value="대전광역시">대전광역시</option>
+            <option value="울산광역시">울산광역시</option>
+            <option value="세종특별자치시">세종특별자치시</option>
+            <option value="경기도">경기도</option>
+            <option value="강원특별자치도">강원특별자치도</option>
+            <option value="충청북도">충청북도</option>
+            <option value="충청남도">충청남도</option>
+            <option value="전북특별자치도">전북특별자치도</option>
+            <option value="전라남도">전라남도</option>
+            <option value="경상북도">경상북도</option>
+            <option value="경상남도">경상남도</option>
+            <option value="제주특별자치도">제주특별자치도</option>
+          </select>
+          <svg class="chevron" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+      </div>
+
+      <!-- Gu / Gun multi-select -->
+      <div id="guPanel" style="display:none;">
+        <div class="gu-header">
+          <label class="field-label" style="margin-bottom:0;">구 / 군</label>
+          <span class="gu-count" id="guCount">0/3</span>
+        </div>
+        <div class="gu-grid-wrap" id="guGridWrap">
+          <div class="gu-grid" id="guGrid"></div>
+        </div>
+        <div class="field-error" id="guErrorMsg" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          구를 1개 이상 선택해주세요.
+        </div>
+        <button type="button" class="confirm-btn" id="confirmGuBtn" style="display:none;">지도에 표시 →</button>
+      </div>
+
+      <!-- Selected chips -->
+      <div id="selectedChipsPanel" style="display:none;">
+        <label class="field-label">선택된 구역</label>
+        <div class="selected-chip-row" id="selectedChipRow"></div>
+      </div>
+
+      <!-- Condition -->
+      <div>
+        <label class="field-label">조건 입력</label>
+        <div class="chip-row">
+          <button type="button" class="chip" data-preset="육아">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+            육아
+          </button>
+          <button type="button" class="chip" data-preset="노년">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z"/></svg>
+            노년
+          </button>
+          <button type="button" class="chip" data-preset="반려동물">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="4" r="2"/><circle cx="18" cy="8" r="2"/><circle cx="4" cy="8" r="2"/><path d="M17 14c-.7-1.4-1.8-2.3-3-2.7a4.7 4.7 0 0 0-4 0c-1.2.4-2.3 1.3-3 2.7-.7 1.4-.7 3 .3 4.1 1 1.1 2.4 1.5 3.9.9.4-.2.9-.2 1.3 0 1.5.6 2.9.2 3.9-.9 1-1.1 1-2.7.3-4.1Z"/></svg>
+            반려동물
+          </button>
+        </div>
+
+        <div class="textarea-wrap">
+          <textarea class="query-input" id="queryInput" maxlength="200" placeholder="예) 요양병원이 많고 초등학교가 가까운 곳"></textarea>
+          <span class="char-count"><span id="charCount">0</span>/200</span>
+        </div>
+        <div class="field-error" id="queryErrorMsg" style="display:none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          검색 조건을 입력해주세요.
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-footer">
+      <button class="search-btn" id="searchBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        검색하기
+      </button>
+    </div>
+    </div>
+
+    <!-- Results view -->
+    <div id="resultsView" style="display:none; flex-direction:column; height:100%;">
+      <div class="results-header">
+        <button type="button" class="back-btn" id="backToSearchBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        </button>
+        <div>
+          <p class="title">검색 결과</p>
+          <p class="subtitle" id="resultsSubtitle">0개 동 순위 반환</p>
+        </div>
+      </div>
+
+      <div class="keyword-summary" id="keywordSummary"></div>
+
+      <div class="results-list" id="resultsList"></div>
+    </div>
+  </aside>
+
+  <!-- Map area -->
+  <main class="map-area">
+    <div class="map-error" id="mapError">
+      <div class="map-error-inner">
+        <svg class="alert" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <p>지도를 불러오지 못했어요.<br />새로고침 해주세요.</p>
+        <button class="refresh-link" id="refreshBtn">새로고침</button>
+      </div>
+    </div>
+
+    <div class="score-legend" id="scoreLegend" style="display:none;">
+      <p class="score-legend-title">점수 범례</p>
+      <div class="score-legend-swatches">
+        <div class="swatch-col"><div class="swatch" style="background:#A7F3D0;"></div><span>낮음</span></div>
+        <div class="swatch-col"><div class="swatch" style="background:#6EE7B7;"></div><span>&nbsp;</span></div>
+        <div class="swatch-col"><div class="swatch" style="background:#34D399;"></div><span>&nbsp;</span></div>
+        <div class="swatch-col"><div class="swatch" style="background:#10B981;"></div><span>&nbsp;</span></div>
+        <div class="swatch-col"><div class="swatch" style="background:#059669;"></div><span>높음</span></div>
+      </div>
+    </div>
+
+    <button class="locate-btn" id="locateBtn" title="현재 위치">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+    </button>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const REGIONS = {
+    "서울특별시": ["강남구","강동구","강북구","강서구","관악구","광진구","구로구","금천구","노원구","도봉구","동대문구","동작구","마포구","서대문구","서초구","성동구","성북구","송파구","양천구","영등포구","용산구","은평구","종로구","중구","중랑구"],
+    "부산광역시": ["강서구","금정구","기장군","남구","동구","동래구","부산진구","북구","사상구","사하구","서구","수영구","연제구","영도구","중구","해운대구"],
+    "인천광역시": ["계양구","남동구","동구","미추홀구","부평구","서구","연수구","중구","강화군","옹진군"],
+    "대구광역시": ["달서구","달성군","동구","북구","서구","수성구","중구","남구"],
+    "광주광역시": ["광산구","남구","동구","북구","서구"],
+    "대전광역시": ["대덕구","동구","서구","유성구","중구"],
+    "울산광역시": ["남구","동구","북구","중구","울주군"],
+    "세종특별자치시": ["세종시"],
+    "경기도": ["고양시","과천시","광명시","광주시","구리시","군포시","김포시","남양주시","동두천시","부천시","성남시","수원시","시흥시","안산시","안성시","안양시","양주시","여주시","오산시","용인시","의왕시","의정부시","이천시","파주시","평택시","포천시","하남시","화성시","가평군","양평군","연천군"],
+    "강원특별자치도": ["강릉시","동해시","삼척시","속초시","원주시","춘천시","태백시","고성군","양구군","양양군","영월군","인제군","정선군","철원군","평창군","홍천군","화천군","횡성군"],
+    "충청북도": ["청주시","충주시","제천시","보은군","옥천군","영동군","증평군","진천군","괴산군","음성군","단양군"],
+    "충청남도": ["천안시","공주시","보령시","아산시","서산시","논산시","계룡시","당진시","금산군","부여군","서천군","청양군","홍성군","예산군","태안군"],
+    "전북특별자치도": ["전주시","군산시","익산시","정읍시","남원시","김제시","완주군","진안군","무주군","장수군","임실군","순창군","고창군","부안군"],
+    "전라남도": ["목포시","여수시","순천시","나주시","광양시","담양군","곡성군","구례군","고흥군","보성군","화순군","장흥군","강진군","해남군","영암군","무안군","함평군","영광군","장성군","완도군","진도군","신안군"],
+    "경상북도": ["포항시","경주시","김천시","안동시","구미시","영주시","영천시","상주시","문경시","경산시","의성군","청송군","영양군","영덕군","청도군","고령군","성주군","칠곡군","예천군","봉화군","울진군","울릉군"],
+    "경상남도": ["창원시","진주시","통영시","사천시","김해시","밀양시","거제시","양산시","의령군","함안군","창녕군","고성군","남해군","하동군","산청군","함양군","거창군","합천군"],
+    "제주특별자치도": ["제주시","서귀포시"],
+  };
+
+  const PRESET_QUERIES = {
+    "육아": "유치원, 초등학교, 소아과가 가까운 육아 친화 환경",
+    "노년": "공원, 요양병원, 경로당이 가까운 노인 생활 편의 지역",
+    "반려동물": "동물병원, 애견카페, 공원이 많은 반려동물 친화 지역",
+  };
+
+  const citySelect = document.getElementById('citySelect');
+  const guPanel = document.getElementById('guPanel');
+  const guGrid = document.getElementById('guGrid');
+  const guGridWrap = document.getElementById('guGridWrap');
+  const guCount = document.getElementById('guCount');
+  const guErrorMsg = document.getElementById('guErrorMsg');
+  const confirmGuBtn = document.getElementById('confirmGuBtn');
+  const selectedChipsPanel = document.getElementById('selectedChipsPanel');
+  const selectedChipRow = document.getElementById('selectedChipRow');
+
+  const queryInput = document.getElementById('queryInput');
+  const charCount = document.getElementById('charCount');
+  const chips = document.querySelectorAll('.chip');
+  const searchBtn = document.getElementById('searchBtn');
+  const queryErrorMsg = document.getElementById('queryErrorMsg');
+  const toast = document.getElementById('toast');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const locateBtn = document.getElementById('locateBtn');
+
+  let selectedDistricts = [];
+  const MAX_GU = 3;
+
+  function renderGuGrid(city) {
+    guGrid.innerHTML = '';
+    const list = REGIONS[city] || [];
+    list.forEach((d) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'gu-item';
+      btn.textContent = d;
+      const isSelected = selectedDistricts.includes(d);
+      const isMaxed = !isSelected && selectedDistricts.length >= MAX_GU;
+      if (isSelected) btn.classList.add('selected');
+      if (isMaxed) btn.classList.add('disabled');
+      btn.addEventListener('click', () => toggleGu(d));
+      guGrid.appendChild(btn);
+    });
+  }
+
+  function updateGuCount() {
+    guCount.textContent = `${selectedDistricts.length}/${MAX_GU}`;
+    guCount.classList.toggle('maxed', selectedDistricts.length >= MAX_GU);
+  }
+
+  function toggleGu(d) {
+    guErrorMsg.style.display = 'none';
+    guGridWrap.classList.remove('error');
+    if (selectedDistricts.includes(d)) {
+      selectedDistricts = selectedDistricts.filter((x) => x !== d);
+    } else if (selectedDistricts.length >= MAX_GU) {
+      showToast('최대 3개까지 선택 가능합니다.');
+      return;
+    } else {
+      selectedDistricts = [...selectedDistricts, d];
+    }
+    updateGuCount();
+    renderGuGrid(citySelect.value);
+    confirmGuBtn.style.display = selectedDistricts.length > 0 ? 'block' : 'none';
+  }
+
+  function renderSelectedChips() {
+    selectedChipRow.innerHTML = '';
+    selectedDistricts.forEach((d) => {
+      const chip = document.createElement('span');
+      chip.className = 'selected-chip';
+      chip.innerHTML = `${d}<button data-d="${d}"><svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>`;
+      chip.querySelector('button').addEventListener('click', () => removeGu(d));
+      selectedChipRow.appendChild(chip);
+    });
+    if (selectedDistricts.length < MAX_GU) {
+      const addBtn = document.createElement('button');
+      addBtn.type = 'button';
+      addBtn.className = 'add-chip-btn';
+      addBtn.textContent = '+ 추가';
+      addBtn.addEventListener('click', openGuPanel);
+      selectedChipRow.appendChild(addBtn);
+    }
+  }
+
+  function removeGu(d) {
+    selectedDistricts = selectedDistricts.filter((x) => x !== d);
+    if (selectedDistricts.length === 0) {
+      selectedChipsPanel.style.display = 'none';
+      openGuPanel();
+    } else {
+      renderSelectedChips();
+    }
+  }
+
+  function openGuPanel() {
+    guPanel.style.display = 'block';
+    selectedChipsPanel.style.display = 'none';
+    updateGuCount();
+    renderGuGrid(citySelect.value);
+    confirmGuBtn.style.display = selectedDistricts.length > 0 ? 'block' : 'none';
+  }
+
+  function confirmGuSelection() {
+    if (selectedDistricts.length === 0) return;
+    guPanel.style.display = 'none';
+    selectedChipsPanel.style.display = 'block';
+    renderSelectedChips();
+  }
+
+  citySelect.addEventListener('change', () => {
+    selectedDistricts = [];
+    selectedChipsPanel.style.display = 'none';
+    guErrorMsg.style.display = 'none';
+    guGridWrap.classList.remove('error');
+    if (citySelect.value) {
+      openGuPanel();
+    } else {
+      guPanel.style.display = 'none';
+    }
+  });
+
+  confirmGuBtn.addEventListener('click', confirmGuSelection);
+
+  function updateCount() {
+    charCount.textContent = queryInput.value.length;
+  }
+
+  queryInput.addEventListener('input', () => {
+    updateCount();
+    if (queryInput.value.trim().length >= 2) {
+      queryErrorMsg.style.display = 'none';
+    }
+  });
+
+  chips.forEach((chip) => {
+    chip.addEventListener('click', () => {
+      chips.forEach((c) => c.classList.remove('active'));
+      chip.classList.add('active');
+      const key = chip.dataset.preset;
+      queryInput.value = PRESET_QUERIES[key];
+      updateCount();
+      queryErrorMsg.style.display = 'none';
+    });
+  });
+
+  /* ── mock data for generating search results ── */
+  function hashInt(s) {
+    let v = 0;
+    for (let i = 0; i < s.length; i++) v = (Math.imul(31, v) + s.charCodeAt(i)) | 0;
+    return Math.abs(v);
+  }
+
+  function mockCount(dong, keyword) {
+    return (hashInt(dong + keyword) % 9) + 1;
+  }
+
+  const DONG_DATA = {
+    "강남구": ["역삼1동","역삼2동","개포1동","개포2동","압구정동","청담동","논현1동","도곡1동","대치1동","삼성1동"],
+    "마포구": ["망원1동","망원2동","합정동","서교동","연남동","성산1동","상암동","공덕동","아현동","도화동"],
+    "서초구": ["서초1동","서초2동","서초3동","잠원동","반포1동","반포3동","방배1동","방배3동","양재1동","내곡동"],
+    "송파구": ["잠실1동","잠실2동","잠실3동","잠실4동","잠실본동","가락1동","문정1동","방이1동","오금동","석촌동"],
+    "종로구": ["사직동","삼청동","부암동","평창동","교남동","가회동","종로1가동","이화동","혜화동","창신1동"],
+    "중구": ["소공동","회현동","명동","필동","장충동","광희동","을지로동","신당동","다산동","황학동"],
+    "용산구": ["후암동","남영동","청파동","원효로1동","효창동","이태원1동","한남동","보광동","서빙고동","이촌1동"],
+    "성동구": ["왕십리2동","마장동","사근동","행당1동","응봉동","금호1가동","옥수동","성수1가1동","성수2가1동","송정동"],
+    "은평구": ["녹번동","불광1동","불광2동","갈현1동","구산동","대조동","응암1동","역촌동","신사동","증산동"],
+    "강서구": ["화곡1동","화곡2동","화곡3동","화곡4동","우장산동","가양1동","가양2동","방화1동","마곡동","염창동"],
+  };
+
+  function getDongsForGu(gu) {
+    if (DONG_DATA[gu]) return DONG_DATA[gu];
+    const prefix = gu.replace(/[구군시]$/, "");
+    return Array.from({ length: 8 }, (_, i) => `${prefix}${i + 1}동`);
+  }
+
+  const KEYWORD_PRESETS = {
+    "육아": { "유치원": 3, "초등학교": 3, "소아과": 2, "키즈카페": 2, "공원": 1 },
+    "노년": { "요양병원": 3, "경로당": 3, "약국": 2, "공원": 2, "버스정류장": 1 },
+    "반려동물": { "동물병원": 4, "애견카페": 3, "공원": 2, "펫샵": 2 },
+  };
+
+  function extractKeywords(query) {
+    const q = query;
+    if (q.includes("육아") || q.includes("아이") || q.includes("초등") || q.includes("유치")) return KEYWORD_PRESETS["육아"];
+    if (q.includes("노년") || q.includes("노인") || q.includes("요양") || q.includes("어르신")) return KEYWORD_PRESETS["노년"];
+    if (q.includes("반려") || q.includes("강아지") || q.includes("고양이") || q.includes("펫")) return KEYWORD_PRESETS["반려동물"];
+    const allKws = [...new Set(Object.values(KEYWORD_PRESETS).flatMap((k) => Object.keys(k)))];
+    const found = allKws.filter((k) => query.includes(k));
+    if (found.length > 0) return Object.fromEntries(found.map((k) => [k, 2]));
+    return { "공원": 2, "편의점": 1, "카페": 1, "버스정류장": 2 };
+  }
+
+  function runSearch() {
+    const kws = extractKeywords(queryInput.value.trim());
+    const allDongs = selectedDistricts.flatMap((gu) => getDongsForGu(gu).map((name) => ({ name, gu })));
+
+    const scored = allDongs.map((d) => {
+      const breakdown = Object.entries(kws).map(([kw, weight]) => {
+        const count = mockCount(d.name, kw);
+        return { keyword: kw, weight, count, contribution: weight * count };
+      });
+      const score = breakdown.reduce((s, b) => s + b.contribution, 0);
+      const topKeywords = [...breakdown].sort((a, b) => b.contribution - a.contribution).slice(0, 2).map((b) => b.keyword);
+      return { dong: d.name, gu: d.gu, score, breakdown, topKeywords };
+    });
+
+    const sorted = [...scored].sort((a, b) => b.score - a.score).map((d, i) => ({ ...d, rank: i + 1 }));
+    renderResults(sorted, kws);
+  }
+
+  function renderResults(results, kws) {
+    document.getElementById('resultsSubtitle').textContent = `${results.length}개 동 순위 반환`;
+
+    const keywordSummary = document.getElementById('keywordSummary');
+    keywordSummary.innerHTML = '';
+    Object.entries(kws).forEach(([kw, weight]) => {
+      const chip = document.createElement('span');
+      chip.className = 'keyword-chip';
+      chip.textContent = `${kw} ×${weight}`;
+      keywordSummary.appendChild(chip);
+    });
+
+    const maxScore = Math.max(...results.map((r) => r.score), 1);
+    const list = document.getElementById('resultsList');
+    list.innerHTML = '';
+    results.forEach((r) => {
+      const ratio = r.score / maxScore;
+      const item = document.createElement('div');
+      item.className = 'result-item';
+      const pills = r.topKeywords.map((k) => `<span>${k}</span>`).join('');
+      item.innerHTML = `
+        <div class="rank-badge ${r.rank <= 3 ? 'top' : ''}">${r.rank}</div>
+        <div class="result-content">
+          <div class="result-top-row">
+            <span class="dong-name">${r.dong}</span>
+            <span class="score">${r.score}점</span>
+          </div>
+          <div class="gu-name">${r.gu}</div>
+          <div class="progress-bar"><div class="progress-fill" style="width:${Math.max(ratio * 100, 4)}%"></div></div>
+          <div class="keyword-pills">${pills}</div>
+        </div>
+      `;
+      list.appendChild(item);
+    });
+
+    document.getElementById('searchView').style.display = 'none';
+    document.getElementById('resultsView').style.display = 'flex';
+    document.getElementById('scoreLegend').style.display = results.length > 0 ? 'block' : 'none';
+  }
+
+  document.getElementById('backToSearchBtn').addEventListener('click', () => {
+    document.getElementById('resultsView').style.display = 'none';
+    document.getElementById('searchView').style.display = 'flex';
+    document.getElementById('scoreLegend').style.display = 'none';
+  });
+
+  function showToast(msg) {
+    toast.textContent = msg;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 2500);
+  }
+
+  searchBtn.addEventListener('click', () => {
+    const trimmed = queryInput.value.trim();
+
+    if (selectedDistricts.length === 0) {
+      guErrorMsg.style.display = 'flex';
+      guGridWrap.classList.add('error');
+      if (guPanel.style.display === 'none') openGuPanel();
+      return;
+    }
+    if (trimmed.length < 2) {
+      queryErrorMsg.style.display = 'flex';
+      return;
+    }
+    queryErrorMsg.style.display = 'none';
+    runSearch();
+  });
+
+  refreshBtn.addEventListener('click', () => {
+    window.location.reload();
+  });
+
+  locateBtn.addEventListener('click', () => {
+    showToast('현재 위치로 이동합니다.');
+  });
+</script>
+
+</body>
+</html>
